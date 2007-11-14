@@ -301,30 +301,3 @@ module FSWatcher
   # if the file you want to watch doesnt exist or isnt readable this is thrown
   class InvalidFileError < StandardError; end
 end
-
-#--- main program ----
-if __FILE__ == $0
-  watcher = FileSystemWatcher.new()
-  watcher.addDirectory("/cygdrive/c/Inetpub/ftproot/", "*.xml")
-  watcher.sleepTime = 3
-  watcher.useMD5 = true
-
-  test = false
-  watcher.stopWhen {
-    test == true
-  }
-
-  watcher.start() { |status,file|
-    if status == FileSystemWatcher::CREATED then
-      puts "created: #{file}"
-    elsif status == FileSystemWatcher::MODIFIED then
-      puts "modified: #{file}"
-    elsif status == FileSystemWatcher::DELETED then
-      puts "deleted: #{file}"
-    end
-  }
-
-  sleep(10)
-  test = true
-  watcher.join()
-end

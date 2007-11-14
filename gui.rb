@@ -61,6 +61,8 @@ class Dialog < Gtk::Dialog
   end
 end
 
+#class List < Gtk::
+
 Gtk.init
 NDSTrimWindow.new
 Gtk.main

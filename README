@@ -13,9 +13,6 @@ Many distros allow you to make files executable via a menu.
 Right click the file and click properties and select the
 permissions tab, check "allow execution of file"
 
-Daemon.rb, gui.rb, trim.bat and trim.sh have to be in the same  directory
-as ndstrim.
-
 ----------------------------------------------------------------------------------------------
 
 GUI: 	Make sure you gui.rb is executable and you have ruby 
