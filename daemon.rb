@@ -1,26 +1,22 @@
-#!/usr/bin/ruby -W0
-#ndstrim daemon, automatically trims roms
-#placed in its watch directory.
+#!/usr/bin/env ruby
+#ndstrim daemon, automatically trims roms placed in its watch directory.
 #Easy to extend.
 
 require "lib/filesystemwatcher"
 
-@path = "/mnt/sda4/watch/"    #path to watch
-@target_path = "/mnt/sda4/roms/"    #path where trimmed roms are placed
-@ndstrim = "/home/sazeinel/git-projects/ndstrim/ndstrim"    #path to ndstrim executable
-@unrar = "/usr/bin/unrar"    #path to unrar command
-@unzip = "/usr/bin/unzip"    #path to uzip command
-@seven_z = "/usr/bin/7z"    #path to 7z command
-#@tar = "/bin/tar"    #path to tar command
+@path = "/path/to/watch/"    
+@target_path = "/path/to/target/"
+@ndstrim = "/path/to/ndstrim"
+@unrar = "/usr/bin/unrar"
+@unzip = "/usr/bin/unzip"
+@seven_z = "/usr/bin/7z"
 
-sleep = 1    #how long for the watcher to loop, 
-             #affects speed at which files are detected
-             #in the watch directory
+sleep = 1
 
 #start message
-print "ndstrim daemon 1.1\n
-Watching: #@path
-Target: #@target_path\n\n"
+print "\e[35mndstrim daemon 1.2\n
+\e[32mWatching: \e[34m#@path
+\e[32mTarget: \e[34m#@target_path\e[0m\n\n"
 
 #-----Don't edit below this------
 #check for path existance, create if none exists
@@ -32,102 +28,78 @@ ndswatch = FileSystemWatcher.new
 rarwatch = FileSystemWatcher.new
 zipwatch = FileSystemWatcher.new
 seven_zwatch = FileSystemWatcher.new
-#tarwatch = FileSystemWatcher.new
 
 #specify watch directory and pattern to watch
 ndswatch.addDirectory(@path, "*.nds")
 rarwatch.addDirectory(@path, "*.rar")
 zipwatch.addDirectory(@path, "*.zip")
 seven_zwatch.addDirectory(@path, "*.7z")
-#tarwatch.addDirectory(@path, "*.bz2")
-#tarwatch.addDirectory(@path, "*.gz")
 
 #set loop sleep time
 ndswatch.sleepTime = sleep
 rarwatch.sleepTime = sleep
 zipwatch.sleepTime = sleep
 seven_zwatch.sleepTime = sleep
-#tarwatch.sleepTime = sleep
 
-#nds file watcher
 ndswatch.start do |status, file|
   if (status == FileSystemWatcher::CREATED)
-    puts "#{file} added, trimming..."
+    puts "\e[34m#{file} added, trimming...\e[0m"
     file_name_array = file.split('/')
     file_name = file_name_array[-1]
     if system("#@ndstrim #{file} #{@target_path + file_name}")
-      puts "#{file} trimmed successfully"
+      puts "\e[32m#{file} trimmed successfully\e[0m"
       File.delete(file)
+    else
+      File.open(@target_path + "error_ndstrim." + file_name, "w") {puts "\e[33mtrimming failed!\e[0m"}
     end
   elsif (status == FileSystemWatcher::DELETED)
-    puts "deleted: #{file}"
+    puts "\e[31mdeleted: #{file}\e[0m"
   end
 end
 
-#rar watcher
 rarwatch.start do |status, file|
   if (status == FileSystemWatcher::CREATED)
-    puts "#{file} added, unraring..."
+    puts "\e[34m#{file} added, unraring...\e[0m"
     if system("#@unrar x -inul #{file} #@path")
       puts "#{file} unrared successfully"
       File.delete(file)
     else
-      puts "unraring failed!"
+      puts "\e[33munraring failed!\e[0m"
     end
   elsif (status == FileSystemWatcher::DELETED)
-    puts "deleted: #{file}"
+    puts "\e[31mdeleted: #{file}\e[0m"
   end
 end
 
-#zip watcher
 zipwatch.start do |status, file|
   if (status == FileSystemWatcher::CREATED)
-    puts "#{file} added, unzipping..."
-    if system("#@unzip #{file} -d #@path")
+    puts "\e[34m#{file} added, unzipping...\e[0m"
+    if system("#@unzip -qq #{file} -d #@path")
       puts "#{file} unzipped successfully"
       File.delete(file)
     else
-      puts "unzipping failed!"
+      puts "\e[33munzipping failed!\e[0m"
     end
   elsif (status == FileSystemWatcher::DELETED)
-    puts "deleted: #{file}"
+    puts "\e[31mdeleted: #{file}\e[0m"
   end
 end
 
-#7zwatcher
 seven_zwatch.start do |status, file|
   if (status == FileSystemWatcher::CREATED)
-    puts "#{file} added, extracting 7z..."
+    puts "\e[34m#{file} added, extracting 7z...\e[0m"
     if system("#@seven_z x -bd -o#@path #{file}")
       puts "#{file} extracted successfully"
       File.delete(file)
     else
-      puts "extraction failed"
+      puts "\e[33mextraction failed\e[0m"
     end
   elsif (status == FileSystemWatcher::DELETED)
-    puts "deleted: #{file}"
+    puts "\e[31mdeleted: #{file}\e[0m"
   end
 end
-
-#tarwatcher - testing
-=begin
-tarwatch.start do |status, file|
-  if (status == FileSystemWatcher::CREATED)
-    puts "#{file} added, untarring..."
-    if system("#@tar -xf #{file} -C #@path")
-      puts "#{file} untarred successfully"
-    else
-      puts "extraction failed"
-    end
-    File.delete(file)
-  elsif (status == FileSystemWatcher::DELETED)
-    puts "deleted: #{file}"
-  end
-end
-=end
 
 #loop
 ndswatch.join
 rarwatch.join
 seven_zwatch.join
-#tarwatch.join
