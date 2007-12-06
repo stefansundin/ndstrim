@@ -1,5 +1,6 @@
 require 'thread'
 
+#http://www.jhorman.org/FileSystemWatcher/index.html
 # The Runnable module is a generic mixin for including state and
 # status information in a class
 module ServiceState

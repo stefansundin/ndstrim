@@ -2,6 +2,7 @@ require "md5"
 require "thread"
 require "lib/servicestate"
 
+#http://www.jhorman.org/FileSystemWatcher/index.html
 # This class will watch a directory or a set of directories and alert you of
 # new files, modified files, deleted files. You can optionally only be alerted
 # when a files md5 hash has been changed so you only are alerted to real changes.
@@ -25,14 +26,14 @@ class FileSystemWatcher
     @priority = 0
     @stopWhen = nil
 
-    @directories = Array.new()
-    @files = Array.new()
+    @directories = []
+    @files = []
 
     @foundFiles = nil
     @firstLoad = true
     @watchThread = nil
     
-    initializeState()
+    initializeState
 
     if dir then
       addDirectory(dir, expression)
@@ -77,7 +78,7 @@ class FileSystemWatcher
     setState(STARTED)
 
     @firstLoad = true
-    @foundFiles = Hash.new()
+    @foundFiles = Hash.new
 
     # we watch in a new thread
     @watchThread = Thread.new {
@@ -87,12 +88,12 @@ class FileSystemWatcher
 	  # this will hold the list of the files we looked at this iteration
 	  # allows us to not look at the same file again and also to compare
 	  # with the foundFile list to see if something was deleted
-	  alreadyExamined = Hash.new()
+	  alreadyExamined = Hash.new
 	  
 	  # check the files in each watched directory
 	  if not @directories.empty? then
 	    @directories.each { |dirObj|
-	      examineFileList(dirObj.getFiles(), alreadyExamined, &block)
+	      examineFileList(dirObj.getFiles, alreadyExamined, &block)
 	    }
 	  end
 	  
@@ -104,8 +105,8 @@ class FileSystemWatcher
 	    if not @foundFiles.empty? then
 	      # now diff the found files and the examined files to see if
 	      # something has been deleted
-	      allFoundFiles = @foundFiles.keys()
-	      allExaminedFiles = alreadyExamined.keys()
+	      allFoundFiles = @foundFiles.keys
+	      allExaminedFiles = alreadyExamined.keys
 	      intersection = allFoundFiles - allExaminedFiles
 	      intersection.each { |fileName|
 		# callback
@@ -130,14 +131,14 @@ class FileSystemWatcher
   end
 
   # kill the filewatcher thread
-  def stop()
+  def stop
     setState(STOPPED)
-    @watchThread.wakeup()
+    @watchThread.wakeup
   end
 
   # wait for the filewatcher to finish
-  def join()
-    @watchThread.join() if @watchThread
+  def join
+    @watchThread.join if @watchThread
   end
 
 
@@ -257,7 +258,7 @@ module FSWatcher
       @fileName, @modTime, @size, @isNewFile  = fileName, modTime, size, isNewFile      
       @md5 = nil
       if useMD5 then
-	genMD5()
+	genMD5
       end
     end
 
@@ -279,7 +280,7 @@ module FSWatcher
     end
 
     # generate my files md5 value
-    def genMD5()
+    def genMD5
       @md5 = FSWatcher.genFileMD5(@fileName)
     end
   end
@@ -288,8 +289,8 @@ module FSWatcher
   def FSWatcher.genFileMD5(fileName)
     if FileTest.file?(fileName) then      
       f = File.open(fileName)
-      contents = f.read()
-      f.close()
+      contents = f.read
+      f.close
       return MD5.new(contents) if contents
     end
     return nil
