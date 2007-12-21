@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=NDSTrim
+Version=1.29
+Categories=Game
+Comment=A Gtk+ NDS Rom Trimmer
+Exec=ndstrim-gui.rb
+Terminal=false
+Type=Application
+Icon=ndstrim
+StartupNotify=true

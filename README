@@ -1,41 +1,5 @@
-ndstrim-1.27
+ndstrim 1.27.x
+---------------
 
----------------------------------------------------------------------------------------------
-
-Important: 
-
-Make sure ndstrim is executable before starting.
-
-Run this in a terminal:	cd ~/ndstrim
-					chmod +x ndstrim
-					
-Many distros allow you to make files executable via a menu.
-Right click the file and click properties and select the
-permissions tab, check "allow execution of file"
-
-----------------------------------------------------------------------------------------------
-
-GUI: 	Make sure you gui.rb is executable and you have ruby 
-and ruby-gnome2 installed:
-
-	Ubuntu/Debian: sudo apt-get install ruby ruby-gnome2
-
-Double click gui.rb to launch
-
------------------------------------------------------------------------------------------------
-
-DAEMON: Make sure you have ruby installed and the daemon.rb file is executable. The daemon 
-only runs in a terminal, if you are unfamiliar with terminals use the GUI version.
-	
-------------------------------------------------------------------------------------------------
-
-trim.sh: Place the files you want to trim in the ndstrim/ folder.
-Make sure trim.sh is executable, double click trim.sh and your
-files will be trimmed and placed in a folder called trimmed inside
-the ndstrim folder.
-
--------------------------------------------------------------------------------------------------
-
-Contributors - recover
-	      - Azimuth
-	       - anyone else who wants to help :)
+To install, as root run: ruby setup.rb install
+To uninstall as root run: ruby setup.rb uninstall

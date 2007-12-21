@@ -1,0 +1,15 @@
+v-1.27
+
+-Extended logger
+-Add archive support
+-Create debs and pkgbuild
+
+v-1.2
+
+-Get windows port working
+	*rewrite filesystem watcher
+	*test it with 7za
+
+-Finish extended-GUI
+
+-Get my hands on a mac, or a competent tester.
