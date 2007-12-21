@@ -8,7 +8,9 @@ At the moment, ndstrim is a second generation trimmer. That means it intelligent
 These are the things we want to do:
   * Some reports indicate some roms don't have the romsize data in the rom header, ndstrim should check for this. _High priority_
   * Make ndstrim look up the internal rom name, can be useful for end user to see. _High priority_
+  * Implement better command line syntax. Both single operation and multiple file operation should be possible, with ability to specify output directory and/or add prefix/suffix to output filename. _High priority_
   * Look into other trimmers and see what techniques are used. _High priority_
+  * Add a progress bar to the GUI. _Medium priority_
   * Implement first-gen trimmer which is used if the romsize data couldn't be acquired. _Medium priority_
   * Do better reliability checking. E.g. checking if there are anything other than 0x00 or 0xFF after the determined romsize. _Medium priority_
   * Detect if the wifi block is needed or not. _Low priority_
