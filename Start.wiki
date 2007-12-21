@@ -1,0 +1,11 @@
+#summary What is ndstrim?
+#labels Featured
+
+= Introduction =
+
+ndstrim will trim your Nintendo DS roms. Trimming means they will consume less space and you will thus fit more roms on your flashcart.
+
+
+= Read more =
+
+ * TODO
