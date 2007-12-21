@@ -1,5 +1,7 @@
-#summary Initial announcement on GBAtemp ([http://gbatemp.net/index.php?showtopic=59580 thread])
+#summary Initial announcement on GBAtemp
 #labels Phase-Implementation
+
+This is the initial ndstrim announcement on GBAtemp ([http://gbatemp.net/index.php?showtopic=59580 thread]):
 
 =History:=
 I want to share with you all my own nds rom trimmer.
