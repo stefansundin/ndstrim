@@ -1,15 +1,28 @@
-/* ndstrim by recover89@gmail.com
-   Trims NDS roms fast and reliable.
-   ROM size is available in four bytes at 0x80-0x83.
-   Wifi data is stored on 136 bytes after ROM data.
-   Filesize is checked to be at least 0x200 bytes to make sure it contains a DS cartridge header.
-   Filesize is then checked to be at least the rom size+wifi to avoid errors.
-   Source code licensed under GNU GPL version 2 or later.
-   
-   Sources:
-   http://nocash.emubase.de/gbatek.htm
-   http://forums.ds-xtreme.com/showthread.php?t=1964
-   http://gbatemp.net/index.php?showtopic=44022
+/*	This file is part of NDSTrim.
+	
+	NDSTrim is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	NDSTrim is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	
+	You should have received a copy of the GNU General Public License
+	along with NDSTrim.  If not, see <http://www.gnu.org/licenses/>
+	
+	
+	ROM size is available in four bytes at 0x80-0x83.
+	Wifi data is stored on 136 bytes after ROM data.
+	Filesize is checked to be at least 0x200 bytes to make sure it contains a DS cartridge header.
+	Filesize is then checked to be at least the rom size+wifi to avoid errors.
+	
+	Sources:
+	http://nocash.emubase.de/gbatek.htm
+	http://forums.ds-xtreme.com/showthread.php?t=1964
+	http://gbatemp.net/index.php?showtopic=44022
 */
 
 #include <stdio.h>
@@ -43,6 +56,7 @@ int main(int argc, char *argv[]) {
 	FILE *input;
 	if ((input=fopen(argv[1],"rb")) == NULL) {
 		fprintf(stderr,"%s: fopen() failed in file %s, line %d.\n",argv[0],__FILE__,__LINE__);
+		fprintf(stderr,"%s: This is most likely because the input file doesn't exist.\n",argv[0],__FILE__,__LINE__);
 		exit(1);
 	}
 	
