@@ -29,7 +29,7 @@
 #include <stdlib.h>
 
 //#define DEBUG
-#define BUFFER 4000000 //1 MB buffer size
+#define BUFFER 1000000 //1 MB buffer size
 
 //The rom size is located in four bytes at 0x80-0x83
 struct uint32 {
