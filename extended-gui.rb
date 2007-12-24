@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'gtk2'
 
-$version = "1.29"
+$version = "1.27.5"
 
 $license = "
     This file is part of NDSTrim.
@@ -175,12 +175,12 @@ class NDSTrimWindow < Gtk::Window
 
   #loop over each element of liststore, trimming them until the first element of the row is nil
   def trim
-    fract = 0
     while @liststore.iter_first
       @liststore.each do |model, path, iter|
         rom_name = model.get_value(model.get_iter(path), 1)
         base_name = model.get_value(model.get_iter(path), 0)
-        if (system("ndstrim \"#{rom_name}\" \"#{File.join(@out_folder.current_folder, base_name)}\""))
+        rom = UntrimmedRom.new(rom_name)
+        if rom.trim_rom(File.join(@out_folder.current_folder, base_name))
           model.remove(model.get_iter(path))
         end
       end
@@ -200,9 +200,56 @@ class NDSTrimWindow < Gtk::Window
                           "website" => "http://www.code.google.com/p/ndstrim",
                           "website_label" => "NDSTrim Project Website")
   end
-
 end
 
+#A big thanks to recover for help helping a noob understand
+#nds trimmers :)
+class UntrimmedRom
+  attr_reader :file_name, :rom_size, :wifi_block
+  def initialize(file_name)
+    @file_name = file_name
+    @rom_size = (IO.read(file_name, 4, 128)).unpack("I")[0]
+
+    unless File.size(file_name) == @rom_size
+      @wifi_block = (IO.read(file_name, 136, @rom_size)).unpack("I")[0]
+    end
+  end
+
+
+  def check_wifi_block
+    #Checks for wifi_block
+    #90977 is the value if the wifi block exists
+    if @wifi_block == 90977
+      return true
+    else
+      return false
+    end
+  end
+
+  def trim_rom(out_file_name)
+    if check_wifi_block
+      #Append wifi block if it exists
+      adjusted_rom_size = @rom_size + 136
+      else
+      adjusted_rom_size = @rom_size
+    end
+
+    unless @rom_size == File.size(@file_name)
+      unless @file_name == out_file_name || out_file_name.nil?
+        #Appends bytes till adjusted_rom_size to new file
+        File.open(out_file_name, 'w') {|rom|
+          rom.syswrite(IO.read(@file_name, adjusted_rom_size))}
+      else
+        #truncates file in place
+        File.open(@file_name, "w") {|rom|
+          rom.truncate(adjusted_rom_size)}
+      end
+    else
+      puts "Rom already trimmed"
+      return 0
+    end
+  end
+end
 
 if __FILE__ == $0
   Gtk.init
