@@ -14,6 +14,6 @@ These are the things we want to do:
   * Implement first-gen trimmer which is used if the romsize data couldn't be acquired. _Medium priority_
   * Do better reliability checking. E.g. checking if there are anything other than 0x00 or 0xFF after the determined romsize. _Medium priority_
   * Support stdin and stdout. _Medium priority_
-  * Detect if the wifi block is needed or not. _Low priority_
+  * Detect if the wifi block is needed or not. _Low priority_ *Done! Implemented in GUI but not CLI*
   * Manually supply correct romsize values for troublesome roms. To be determined if this is a good solution. _Low priority_
   * Make the GUI display the internal rom icon ([http://nocash.emubase.de/gbatek.htm#dscartridgeicontitle technical info]). _Low priority_
