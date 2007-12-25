@@ -25,10 +25,26 @@ class NDSTrimWindow < Gtk::Window
     super("NDSTrim")
     border_width = 10
     signal_connect("destroy") {Gtk.main_quit}
-
-    if File.exist?("/usr/share/pixmaps/ndstrim.png")
-      set_icon(Gdk::Pixbuf.new("/usr/share/pixmaps/ndstrim.png"))
-    end
+    
+    #Detect OS
+    if RUBY_PLATFORM =~ /linux/
+		@home = ENV['HOME']
+		@icon_filename = '/usr/share/pixmaps/ndstrim.png'
+    elsif RUBY_PLATFORM =~ /win32/
+		@home = ENV['USERPROFILE']
+		@icon_filename = 'ndstrim.png'
+	end
+	
+	#Load icon
+	if File.exist?(@icon_filename)
+		@icon = Gdk::Pixbuf.new(@icon_filename)
+	else
+		#Could not find icon, create a transparent 32x32 image
+		@icon = Gdk::Pixbuf.new(Gdk::Pixbuf::COLORSPACE_RGB, true, 8, 32, 32)
+		@icon.fill!(0x00000000)
+	end
+	
+	set_icon(@icon)
 
     set_resizable(true)
     set_default_size(500, 450)
@@ -76,7 +92,7 @@ class NDSTrimWindow < Gtk::Window
     notebook.set_tab_label(log_text, Gtk::Label.new("Log"))
 
     @in_folder = Gtk::FileChooserButton.new("Input Folder", Gtk::FileChooser::ACTION_SELECT_FOLDER)
-    @in_folder.current_folder = ENV['HOME']
+    @in_folder.current_folder = @home
     @in_folder.signal_connect("current-folder-changed") {load_roms}
 
     hbox_in_folder = Gtk::HBox.new
@@ -84,7 +100,7 @@ class NDSTrimWindow < Gtk::Window
     .pack_start(@in_folder, true, true, 10)
 
     @out_folder = Gtk::FileChooserButton.new("Folder", Gtk::FileChooser::ACTION_SELECT_FOLDER)
-    @out_folder.current_folder = ENV['HOME']
+    @out_folder.current_folder = @home
 
     #create hbox to pack output folder and its label
     hbox_out_folder = Gtk::HBox.new
@@ -193,7 +209,7 @@ class NDSTrimWindow < Gtk::Window
                           "authors" => ["recover <recover89@gmail.com>", "Azimuth <4zimuth@gmail.com>"],
                           "comments" => "NDSTrim open source NDS rom trimmer",
                           "copyright" => "Copyright (C) 2007 NDSTrim Project",
-                          "logo" => Gdk::Pixbuf.new("/usr/share/pixmaps/ndstrim.png"),
+                          "logo" => @icon,
                           "license" => $license,
                           "name" => "NDSTrim",
                           "version" => $version,
