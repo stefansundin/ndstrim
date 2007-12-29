@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require 'gtk2'
-require 'base64'
 
 $license = "
   This file is part of NDSTrim.

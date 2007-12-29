@@ -31,7 +31,7 @@ roms, however, some wifi games have a wifi block which exists after the
 rom size in the header and so the wifi block trimmed off with the rest
 of the padding.
 
-A 2.5 gen trimmer checks for this wifi block and excludes it
+A 3rd gen trimmer checks for this wifi block and excludes it
 from being trimmed in the case of its existance.
 =end
 
