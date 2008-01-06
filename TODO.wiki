@@ -16,4 +16,5 @@ These are the things we want to do:
   * Support stdin and stdout. _Medium priority_
   * Detect if the wifi block is needed or not. _Low priority_ *Done! Implemented in GUI but not CLI*
   * Manually supply correct romsize values for troublesome roms. To be determined if this is a good solution. _Low priority_
+  * Make the code [http://en.wikipedia.org/wiki/Endianness endianness] independent. Currently it will probably only work on little-endian machines. _Low priority_
   * Make the GUI display the internal rom icon ([http://nocash.emubase.de/gbatek.htm#dscartridgeicontitle technical info]). _Low priority_
