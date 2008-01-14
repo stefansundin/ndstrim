@@ -7,5 +7,6 @@ ndstrim will trim your Nintendo DS roms. Trimming means they will consume less s
 
 
 = Read more =
-
+ * [GUI]
  * [TODO]
+ * [History]
