@@ -32,6 +32,7 @@
 #define BUFFER 1000000 //1 MB buffer size
 
 //The rom size is located in four bytes at 0x80-0x83
+//Using a struct is the only way to manually specify the number of bits
 struct uint32 {
 	unsigned data:32; //4*8
 };
@@ -67,7 +68,7 @@ int main(int argc, char *argv[]) {
 	printf("%s: Filesize: %d bytes.\n",argv[0],filesize);
 	#endif
 	
-	//Check if file is big enough to contain a DS cartridge header
+	//Check if rom is big enough to contain a DS cartridge header
 	if (filesize <= 0x200) {
 		fprintf(stderr,"%s: Error: '%s' is too small to contain a NDS cartridge header (corrupt rom?).\n",argv[0],argv[1]);
 		exit(1);
@@ -77,24 +78,53 @@ int main(int argc, char *argv[]) {
 	fseek(input,0x80,SEEK_SET);
 	struct uint32 romsize;
 	fread(&romsize,sizeof(romsize),1,input);
-	unsigned int newsize=romsize.data+136; //Wifi data is located on 136 bytes after rom data
 	
-	//Check if file is big enough to contain the rom+wifi
-	if (filesize < newsize) {
-		fprintf(stderr,"%s: Error: '%s' is too small to contain the whole rom+wifi (corrupt rom?).\n",argv[0],argv[1]);
+	//Check if rom is big enough to contain the rom
+	if (filesize < romsize.data) {
+		fprintf(stderr,"%s: Error: '%s' is too small to contain the whole rom (corrupt rom?).\n",argv[0],argv[1]);
 		exit(1);
 	}
 	
-	//Check if this file seems to have been trimmed before
-	if (filesize == newsize) {
-		fprintf(stderr,"%s: Warning: '%s' is the same size as the trimmed rom will be (already trimmed?).\n",argv[0],argv[1]);
+	//Check if rom seems to have been trimmed before
+	if (filesize == romsize.data) {
+		fprintf(stderr,"%s: Warning: '%s' is the same size as the trimmed rom will be.\n",argv[0],argv[1]);
+		fprintf(stderr,"%s: Warning: Maybe the rom have already been trimmed?\n",argv[0]);
+	}
+	
+	//Check if rom have a wifi block
+	//Wifi data is located on 136 bytes after rom data
+	unsigned int saferomsize=romsize.data;
+	int wifi_block=0;
+	if (filesize >= romsize.data+136) {
+		//Read wifi_data from rom
+		char wifi_data[136];
+		fseek(input,romsize.data,SEEK_SET);
+		fread(wifi_data,1,sizeof(wifi_data),input);
+		//Compare with 0x00 and 0xFF
+		char wifi_compare[136];
+		memset(wifi_compare,0x00,136);
+		if (memcmp(wifi_data,wifi_compare,136) != 0) {
+			//wifi_data is NOT filled with 0x00
+			memset(wifi_compare,0xFF,136);
+			if (memcmp(wifi_data,wifi_compare,136) != 0) {
+				//wifi_data is NOT filled with 0xFF
+				//Since wifi_data doesn't consist of 0x00 or 0xFF, the rom contains a wifi block
+				wifi_block=1;
+				saferomsize+=136;
+			}
+		}
+	}
+	else {
+		fprintf(stderr,"%s: Warning: '%s' is too small to contain a wifi block.\n",argv[0],argv[1]);
+		fprintf(stderr,"%s: Warning: This shouldn't be a problem if the rom have been properly trimmed before.\n",argv[0]);
 	}
 	
 	//Print info
 	if (argc < 3 || debug) {
 		printf("%s: ROM size: %d bytes.\n",argv[0],romsize.data);
-		printf("%s: ROM size + wifi: %d bytes.\n",argv[0],newsize);
-		printf("%s: Can save: %d bytes.\n",argv[0],(filesize-newsize));
+		printf("%s: Safe ROM size: %d bytes.\n",argv[0],saferomsize);
+		printf("%s: Wifi block? %s\n",argv[0],wifi_block?"Yes":"No");
+		printf("%s: Can save: %d bytes.\n",argv[0],(filesize-saferomsize));
 	}
 	
 	//Output trimmed rom
@@ -119,17 +149,17 @@ int main(int argc, char *argv[]) {
 		char buffer[BUFFER];
 		unsigned int fpos=0;
 		unsigned int tocopy=BUFFER;
-		while (fpos < newsize) {
-			if (fpos+BUFFER > newsize) {
-				tocopy=newsize-fpos;
+		while (fpos < saferomsize) {
+			if (fpos+BUFFER > saferomsize) {
+				tocopy=saferomsize-fpos;
 			}
-			fread(&buffer,tocopy,1,input);
-			fwrite(&buffer,tocopy,1,output);
+			fread(buffer,tocopy,1,input);
+			fwrite(buffer,tocopy,1,output);
 			fpos+=tocopy;
 		}
 		
 		//Done
-		printf("%s: Trimmed '%s' to %d bytes (saved %.2f MB).\n",argv[0],argv[1],newsize,(filesize-newsize)/(float)1000000);
+		printf("%s: Trimmed '%s' to %d bytes (saved %.2f MB).\n",argv[0],argv[1],saferomsize,(filesize-saferomsize)/(float)1000000);
 		
 		//Close output
 		#ifdef DEBUG
