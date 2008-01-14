@@ -6,7 +6,7 @@
 At the moment, ndstrim is a second generation trimmer. That means it intelligently looks in the header of the rom file and finds out how big the rom data is, excluding the unnecessary space at the end of the rom.
 
 These are the things we want to do:
-  * Some reports indicate some roms don't have the romsize data in the rom header, ndstrim should check for this. _High priority_
+  * Some reports indicate some roms don't have the romsize data in the rom header, ndstrim should check for this. _High priority_ *Implemented in CLI but not Ruby CLI/GUI*
   * Make ndstrim look up the internal rom name, can be useful for end user to see. _High priority_
   * Implement better command line syntax. Both single operation and multiple file operation should be possible, with ability to specify output directory and/or add prefix/suffix to output filename. _High priority_
   * Look into other trimmers and see what techniques are used. _High priority_
