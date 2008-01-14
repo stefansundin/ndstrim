@@ -29,7 +29,7 @@ I compiled everything on a 32-bit computer (Windows XP + [http://www.mingw.org/ 
 Even though it was compiled on a 32-bit computer it should be able to run fine on 64-bit computer (but I have not tested this).
 
 Here's a screenshot of how it could look like (I did this on linux so the window might not look the same for you):
-http://recover89.googlepages.com/ndstrim-1.0.png
+http://ndstrim.googlecode.com/svn/wiki/ndstrim-1.0.png
 
 Running ndstrim without specifying output will show you how much space you will save when trimming the file (without the file being trimmed).
 
