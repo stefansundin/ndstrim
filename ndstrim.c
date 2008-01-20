@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <string.h>
+#include <string.h>
 
 //#define DEBUG
 #define BUFFER 1000000 //1 MB buffer size
