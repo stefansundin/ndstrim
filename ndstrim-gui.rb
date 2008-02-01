@@ -19,9 +19,6 @@ $license = "
 
 $version = "1.27.5"
 
-$BUFFER = 1_000_000 #1MB
-
-
 class NDSTrimWindow < Gtk::Window
   def initialize
     super("NDSTrim")
@@ -94,7 +91,7 @@ class NDSTrimWindow < Gtk::Window
 
     hbox_in_folder = Gtk::HBox.new
     hbox_in_folder.pack_start(Gtk::Label.new("Input Folder:"), false, true, 15)\
-      .pack_start(@in_folder, true, true, 10)
+    .pack_start(@in_folder, true, true, 10)
 
     @out_folder = Gtk::FileChooserButton.new("Folder", Gtk::FileChooser::ACTION_SELECT_FOLDER)
     @out_folder.current_folder = @home
@@ -123,19 +120,19 @@ class NDSTrimWindow < Gtk::Window
     #create hbox to pack buttons horizontally
     hbox_buttons = Gtk::HBox.new
     hbox_buttons.pack_start(add_button, true, true, 5)\
-      .pack_start(delete_button, true, true, 5)\
-      .pack_start(clear_button, true, true, 5)\
-      .pack_start(trim_button, true, true, 5)\
-      .pack_start(about_button, true, true, 5) #comment line to diable the about button
+    .pack_start(delete_button, true, true, 5)\
+    .pack_start(clear_button, true, true, 5)\
+    .pack_start(trim_button, true, true, 5)\
+    .pack_start(about_button, true, true, 5)
 
     #create vbox and pack notebook
     vbox_main = Gtk::VBox.new
     vbox_main.pack_start(notebook, true, true, 5)\
-      .pack_start(Gtk::HSeparator.new, false, false, 10)\
-      .pack_start(hbox_in_folder, false, true, 5)\
-      .pack_start(hbox_out_folder, false, true, 5)\
-      .pack_start(Gtk::HSeparator.new, false, false, 10)\
-      .pack_start(hbox_buttons, false, true, 5)
+    .pack_start(Gtk::HSeparator.new, false, false, 10)\
+    .pack_start(hbox_in_folder, false, true, 5)\
+    .pack_start(hbox_out_folder, false, true, 5)\
+    .pack_start(Gtk::HSeparator.new, false, false, 10)\
+    .pack_start(hbox_buttons, false, true, 5)
 
     #add vbox main to window and show all widgets
     add(vbox_main)
@@ -154,7 +151,6 @@ class NDSTrimWindow < Gtk::Window
         iter[0] = filename.to_s
         iter[1] = File.join(@in_folder.current_folder, filename)
         update_log("Added #{filename}\n")
-        rom = NDSRom.new(File.join(@in_folder.current_folder, filename))
       end
     end
   end
@@ -164,16 +160,18 @@ class NDSTrimWindow < Gtk::Window
     dialog = Gtk::FileChooserDialog.new("Rom File", nil, Gtk::FileChooser::ACTION_OPEN,
       nil, [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
       [Gtk::Stock::OPEN, Gtk::Dialog::RESPONSE_ACCEPT])
+
     dialog.current_folder = @in_folder.current_folder
     dialog.add_filter(Gtk::FileFilter.new.set_name("*.nds").add_pattern("*.nds"))
     dialog.add_filter(Gtk::FileFilter.new.set_name("All Files").add_pattern("*"))
+
     if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
       iter = @liststore.append
       iter[0] = File.basename(dialog.filename)
       iter[1] = dialog.filename
-      rom = NDSRom.new(dialog.filename)
       update_log("Added #{dialog.filename}\n")
     end
+
     dialog.destroy
   end
 
@@ -195,13 +193,12 @@ class NDSTrimWindow < Gtk::Window
       @liststore.each do |model, path, iter|
         rom_name = model.get_value(model.get_iter(path), 1)
         base_name = model.get_value(model.get_iter(path), 0)
-        rom = NDSRom.new(rom_name)
-        if rom.error?
-          update_log("#{rom.error?}\n")
-        else
+
+        File.open(rom_name, "r+b") do |file|
+          rom = NDSRom.new(file)
           rom.trim(File.join(@out_folder.current_folder, base_name))
-          update_log("Trimmed #{base_name}.\n")
         end
+
         model.remove(model.get_iter(path))
       end
     end
@@ -223,86 +220,127 @@ class NDSTrimWindow < Gtk::Window
 end
 
 class NDSRom
-  attr_reader :filename, :input, :romsize, :romsize_with_wifi, :wifi_block, :wifi_data, :errorcode
+  attr_reader :file_name, :rom_size, :wifi_block
 
-  def initialize(fname)
-    @filename = fname
-    @error = false
+  def initialize(file)
 
-    #Get filesize
-    @filesize = File.size(@filename)
-    if @filesize <= 0x200
-      @error = "Error: '#{@filename}' is too small to contain a NDS cartridge header (corrupt rom?)"
-      puts @error
-      return 1
+    @file_name = file
+
+    #First we check the file size, if that is correct we
+    #read the rom size in the header. If the rom size in the header is not
+    #zero we proceed to reading the wifi block and checking whether or not
+    #it is present. The final check before trimming is to check if the rom
+    #has already been trimmed.
+    check_file_size
+    read_rom_size
+
+    #if the return from the read_wifi_block method is non zero
+    #then the file has the 136 bytes after the rom_size in the
+    #header, otherwise those 136 bytes dont exist and the rom
+    #is most likely trimmed.
+    if read_wifi_block
+      check_wifi_block
     end
 
-    #Get romsize
-    @input = File.new(@filename, 'rb')
-    @input.seek(0x80)
-    @romsize = @input.read(4).unpack('I')[0]
-    @input.rewind
-    if @filesize < @romsize
-      @error = "Error: '#{@filename}' is too small to contain the whole rom (corrupt rom?)"
-      puts @error
-      return 1
-    end
+    #After appending the rom_size according to the rom type
+    #the rom is finally checked for previous trims.
+    check_trimmed
+  end
 
-    #There is size for a possible WiFi block, check if it's there
-    if @filesize >= @romsize + 136
-      @input.seek(@romsize)
-      @wifi_data = @input.read(136)
-      @input.rewind
+  def check_file_size
 
-      if "\377" * 136 == wifi_data || "\000" * 136 == wifi_data
-        #WiFi data consists of 0xFF or WiFi data consists of 0x00
-        @wifi_block = false
-      else
-        #WiFi data consists of things that are not 0xFF.. or 0x00..
-        @wifi_block = true
-      end
-    else
-      #We might also get here if the rom have been trimmed to romsize by mistake before (nothing we can do about it)
-      @wifi_block = false
-    end
-
-    if @wifi_block
-      @romsize_with_wifi = @romsize + 136
-    else
-      @romsize_with_wifi = @romsize
+    #If the rom size is less that 0x200 the file is the size
+    #of the nds rom header, meaning there is no rom data.
+    if File.size(@file_name) <= 0x200
+      raise_error("File too small")
     end
   end
 
-  def error?
-    return @error
+  def read_rom_size
+
+    #seek to 0x80 and read four bytes, this
+    #is the location of the rom size in the header
+    #rewind back to file start.
+    @file_name.seek(0x80)
+    @rom_size = @file_name.read(4).unpack('I')[0]
+    @file_name.rewind
+
+    if @rom_size == 0
+      raise_error("Rom Size in Header is zero")
+    end
   end
 
-  def trim(out_fname)
-    if @romsize == @filesize
-      puts "Warning: #{@filename} is the same size as the trimmed rom will be (already trimmed?)"
+  def read_wifi_block
+
+    #seek to the rom size in the header, read the next 136
+    #bytes after this, which is the wifi block.
+    @file_name.seek(@rom_size)
+    @wifi_block = @file_name.read(136)
+    @file_name.rewind
+
+    #return the wifi_block back to the caller.
+    return @wifi_block
+  end
+
+  def check_wifi_block
+
+    #The wifi block is 136 bytes long, if it doesn't exist it will be padded like all the
+    #data after the rom size in the header. ROMs are usually padded with FF or 00,
+    #we check for both these paddings. If the 136 bytes after the rom_size is neither then
+    #it must contain a working wifi_block.
+    unless @wifi_block == ("\000" * 136) || @wifi_block == ("\377" * 136)
+      puts "Wifi block exists"
+
+      #Append wifi block if it exists.
+      @rom_size = @rom_size + 136
+    else
+      return false
     end
+  end
 
-    if !out_fname.nil? && @filename != out_fname
-      #Copy @input to @output in chunks
-      @output = File.new(out_fname, 'wb')
+  def check_trimmed
+    #If the current ROM size is equal to the theoretical ROM
+    #size(the rom size in header + wifi block) then the ROM
+    #has been (correctly)trimmed before.
 
-      @tocopy = $BUFFER
-      while @output.tell < @romsize_with_wifi
-        if @output.tell+$BUFFER > @romsize_with_wifi
-          @tocopy = @romsize_with_wifi-@output.tell
+    if @rom_size == File.size(@file_name)
+      raise_error("Rom has already been trimmed")
+    end
+  end
+
+  def trim(out_file_name=nil)
+
+    unless @file_name == out_file_name || out_file_name.nil?
+
+      #While the rom's offset is less than the size it should be trimmed to
+      #write the number of bytes defined in the buffer from the untrimmed
+      #file to the trimmed file. Once the ROM's offset + the buffer is greater
+      #than the size it should be the buffer is redefined to be the required rom_size
+      #subtracted by the rom offset, which is essentially the bytes left to be written
+      #to the new file so that it equals the required size.
+      File.open(out_file_name, 'wb') do |rom|
+        buffer = 1_000_000
+        while rom.pos < @rom_size
+          if rom.pos + buffer > @rom_size
+            buffer = @rom_size - rom.pos
+          end
+          rom.write(@file_name.read(buffer))
         end
-        @output.write(@input.read(@tocopy))
       end
     else
-      #Truncate file in place
-      @input.close
-      File.truncate(@filename, @romsize_with_wifi)
+
+      #Truncates file in place.
+      @file_name.truncate(@rom_size)
     end
+  end
+
+  def raise_error(error)
+
+    #Some sort of error handling should go here.
+    puts error
   end
 end
 
-if __FILE__ == $0
-  Gtk.init
-  NDSTrimWindow.new
-  Gtk.main
-end
+Gtk.init
+NDSTrimWindow.new
+Gtk.main

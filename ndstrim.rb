@@ -18,9 +18,10 @@ along with NDSTrim.  If not, see <http://www.gnu.org/licenses/>
 
 ----------------------------------------------------------------
 
-Implementation of a 2.5 generation NDS Rom Trimmer
+Implementation of a 3rd generation NDS Rom Trimmer
 Authors: recover and Azimuth
-Excessive documentation
+
+Excessive documentation!
 
 A 1st gen trimmer merely backtraced from the end of the rom looking
 for FF or 00 padding and removing it.
@@ -28,8 +29,8 @@ for FF or 00 padding and removing it.
 A 2nd gen trimmer checks the rom size that's defined in the header
 and cuts the rom to that size. This is a much better way of trimming
 roms, however, some wifi games have a wifi block which exists after the
-rom size in the header and so the wifi block trimmed off with the rest
-of the padding.
+rom size in the header and so the wifi block is trimmed off with the rest
+off the padding.
 
 A 3rd gen trimmer checks for this wifi block and excludes it
 from being trimmed in the case of its existance.
@@ -49,14 +50,24 @@ class NDSRom
     #has already been trimmed.
     check_file_size
     read_rom_size
-    read_wifi_block
+
+    #if the return from the read_wifi_block method is non zero
+    #then the file has the 136 bytes after the rom_size in the
+    #header, otherwise those 136 bytes dont exist and the rom
+    #is most likely trimmed.
+    if read_wifi_block
+      check_wifi_block
+    end
+
+    #After appending the rom_size according to the rom type
+    #the rom is finally checked for previous trims.
     check_trimmed
-  end
+end
 
   def check_file_size
 
     #If the rom size is less that 0x200 the file is the size
-    #of the nds rom header, meaning there is no rom data
+    #of the nds rom header, meaning there is no rom data.
     if File.size(@file_name) <= 0x200
       raise_error("File too small")
     end
@@ -66,7 +77,7 @@ class NDSRom
 
     #seek to 0x80 and read four bytes, this
     #is the location of the rom size in the header
-    #rewind back to file start
+    #rewind back to file start.
     @file_name.seek(0x80)
     @rom_size = @file_name.read(4).unpack('I')[0]
     @file_name.rewind
@@ -79,11 +90,13 @@ class NDSRom
   def read_wifi_block
 
     #seek to the rom size in the header, read the next 136
-    #bytes after this, which is the wifi block
+    #bytes after this, which is the wifi block.
     @file_name.seek(@rom_size)
     @wifi_block = @file_name.read(136)
     @file_name.rewind
-    check_wifi_block
+
+    #return the wifi_block back to the caller.
+    return @wifi_block
   end
 
   def check_wifi_block
@@ -103,10 +116,10 @@ class NDSRom
   end
 
   def check_trimmed
-
     #If the current ROM size is equal to the theoretical ROM
     #size(the rom size in header + wifi block) then the ROM
     #has been (correctly)trimmed before.
+
     if @rom_size == File.size(@file_name)
       raise_error("Rom has already been trimmed")
     end
@@ -133,14 +146,14 @@ class NDSRom
       end
     else
 
-      #truncates file in place
+      #Truncates file in place.
       @file_name.truncate(@rom_size)
     end
   end
 
   def raise_error(error)
 
-    #print error to stdout and exit 1
+    #Print error to stdout and exit 1.
     puts error
     exit 1
   end
@@ -150,7 +163,7 @@ if __FILE__ == $0
 
   #Creates a block that passes an open file to
   #the class NDSRom, this way we can avoid
-  #re-opening the same file over and over
+  #re-opening the same file over and over.
   File.open(ARGV[0], "r+b") do |file|
     rom = NDSRom.new(file)
     rom.trim(ARGV[1])
